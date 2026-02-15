@@ -32,7 +32,7 @@ Add the following to your Lavalink `application.yml`:
 ```yaml
 lavalink:
   plugins:
-    - dependency: com.github.Myxelium:Jellylink:v0.1.0
+    - dependency: com.github.Myxelium:Jellylink:v0.2.0
       repository: https://jitpack.io
 ```
 
