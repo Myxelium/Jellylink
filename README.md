@@ -25,25 +25,37 @@ Play music from your **Jellyfin** media server through **Lavalink**. Jellylink i
 - A running [Jellyfin](https://jellyfin.org/) server with music in its library
 - Java 17+
 
-### Step 1 — Download or Build the Plugin
+### Step 1 — Add the Plugin to Lavalink
+
+Add the following to your Lavalink `application.yml`:
+
+```yaml
+lavalink:
+  plugins:
+    - dependency: com.github.Myxelium:Jellylink:v0.1.0
+      repository: https://jitpack.io
+```
+
+> **Tip:** Replace `v0.1.0` with the version you want. Check available versions on the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
+
+Lavalink will automatically download the plugin on startup.
+
+<details>
+<summary><strong>Alternative: Manual Installation</strong></summary>
 
 **Option A: Download the JAR**
 
-Grab the latest `jellylink-x.x.x.jar` from the [Releases](../../releases) page.
+Grab the latest `jellylink-x.x.x.jar` from the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
 
 **Option B: Build from Source**
 
 ```bash
 git clone https://github.com/Myxelium/Jellylink.git
 cd Jellylink
-gradle build
+./gradlew build
 ```
 
 The JAR will be at `build/libs/jellylink-0.1.0.jar`.
-
-> **Tip:** If you don't have Gradle installed, run `gradle wrapper --gradle-version 8.7` first, then use `./gradlew build`.
-
-### Step 2 — Install the Plugin
 
 Copy the JAR into your Lavalink `plugins/` directory:
 
@@ -63,7 +75,9 @@ volumes:
   - ./plugins/:/opt/Lavalink/plugins/
 ```
 
-### Step 3 — Configure Lavalink
+</details>
+
+### Step 2 — Configure Lavalink
 
 Add the following to your `application.yml` under `plugins:`:
 
@@ -77,6 +91,7 @@ plugins:
       searchLimit: 5          # max results to return (default: 5)
       audioQuality: "ORIGINAL" # ORIGINAL | HIGH | MEDIUM | LOW | custom kbps
       audioCodec: "mp3"       # only used when audioQuality is not ORIGINAL
+      tokenRefreshMinutes: 30 # re-authenticate every N minutes (0 = only on 401)
 ```
 
 #### Audio Quality Options
@@ -96,7 +111,7 @@ If Lavalink runs in Docker and Jellyfin runs on the host:
 - Or use `http://host.docker.internal:8096` (Docker Desktop)
 - Or use `http://172.17.0.1:8096` (Docker bridge gateway)
 
-### Step 4 — Restart Lavalink
+### Step 3 — Restart Lavalink
 
 Restart Lavalink and check the logs. You should see:
 
@@ -174,8 +189,7 @@ The plugin only handles identifiers starting with `jfsearch:`. All other sources
 | `Jellyfin authentication failed` | Check `baseUrl`, `username`, and `password`. Make sure the URL is reachable from the Lavalink host/container. |
 | `No Jellyfin results found` | Verify the song exists in your Jellyfin library and that the user has access to it. |
 | `Unknown file format` | Update to the latest version — this was fixed by using direct audio streaming. |
-| No cover art | Update to the latest version — artwork URLs are now always included. |
-| Unicode characters broken (e.g. `\u0026`) | Update to the latest version — JSON escape sequences are now decoded. |
+| `No cover art` | Update to the latest version — artwork URLs are now always included. Jellyfin has to be public to internet.|
 
 ---
 
