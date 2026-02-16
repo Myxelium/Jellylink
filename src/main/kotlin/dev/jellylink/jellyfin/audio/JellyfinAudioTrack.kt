@@ -16,6 +16,7 @@ import java.net.URI
 
 class JellyfinAudioTrack(
     trackInfo: AudioTrackInfo,
+    val album: String?,
     private val sourceManager: JellyfinAudioSourceManager,
 ) : DelegatedAudioTrack(trackInfo) {
     @Throws(Exception::class)
@@ -58,7 +59,7 @@ class JellyfinAudioTrack(
         }
     }
 
-    override fun makeShallowClone(): AudioTrack = JellyfinAudioTrack(trackInfo, sourceManager)
+    override fun makeShallowClone(): AudioTrack = JellyfinAudioTrack(trackInfo, album, sourceManager)
 
     override fun getSourceManager(): AudioSourceManager = sourceManager
 
