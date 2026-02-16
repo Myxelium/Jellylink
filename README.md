@@ -5,7 +5,7 @@ Keywords: Jellyfin Lavalink plugin, Jellyfin music bot, Discord music bot self-h
 -->
 # Jellylink – Jellyfin Music Plugin for Lavalink
 
-Play music from your **Jellyfin** media server through **Lavalink**. Jellylink is a Lavalink plugin that lets Discord bots search and stream audio directly from a Jellyfin library — no YouTube needed.
+Play music from your **Jellyfin** media server through **Lavalink**. Jellylink is a Lavalink plugin that lets Discord bots search and stream audio directly from a Jellyfin library - no YouTube needed.
 
 > **Keywords:** Jellyfin Lavalink plugin, Jellyfin Discord music bot, Lavalink Jellyfin source, stream Jellyfin audio Discord, self-hosted music bot
 
@@ -14,10 +14,10 @@ Play music from your **Jellyfin** media server through **Lavalink**. Jellylink i
 ## Features
 
 - **Search your Jellyfin library** from any Lavalink client using the `jfsearch:` prefix
-- **Stream audio directly** — plays FLAC, MP3, OGG, and other formats from Jellyfin
-- **Cover art & metadata** — track title, artist, album, duration, and artwork are passed to your client
-- **Configurable audio quality** — stream original files or transcode to a specific bitrate/codec
-- **Username/password authentication** — no need to manage API keys manually
+- **Stream audio directly** - plays FLAC, MP3, OGG, and other formats from Jellyfin
+- **Cover art & metadata** - track title, artist, album, duration, and artwork are passed to your client
+- **Configurable audio quality** - stream original files or transcode to a specific bitrate/codec
+- **Username/password authentication** - no need to manage API keys manually
 - Works alongside YouTube, SoundCloud, Spotify, and all other Lavalink sources
 
 ---
@@ -27,21 +27,21 @@ Play music from your **Jellyfin** media server through **Lavalink**. Jellylink i
 ### Prerequisites
 
 - [Lavalink v4](https://github.com/lavalink-devs/Lavalink) (tested with 4.0.8)
-- A running [Jellyfin](https://jellyfin.org/) server with music in its library
+- A running [Jellyfin](https://jellyfin.org/) server with music in its library (tested with 10.11.6)
 - Java 17+
 
-### Step 1 — Add the Plugin to Lavalink
+### Step 1 - Add the Plugin to Lavalink
 
 Add the following to your Lavalink `application.yml`:
 
 ```yaml
 lavalink:
   plugins:
-    - dependency: com.github.Myxelium:Jellylink:v0.2.0
+    - dependency: com.github.Myxelium:Jellylink:v0.2.1
       repository: https://jitpack.io
 ```
 
-> **Tip:** Replace `v0.1.0` with the version you want. Check available versions on the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
+> **Tip:** Replace `v0.2.1` with the version you want. Check available versions on the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
 
 Lavalink will automatically download the plugin on startup.
 
@@ -50,7 +50,7 @@ Lavalink will automatically download the plugin on startup.
 
 **Option A: Download the JAR**
 
-Grab the latest `jellylink-x.x.x.jar` from the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
+Grab the latest `jellylink-vx.x.x.jar` from the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
 
 **Option B: Build from Source**
 
@@ -82,7 +82,7 @@ volumes:
 
 </details>
 
-### Step 2 — Configure Lavalink
+### Step 2 - Configure Lavalink
 
 Add the following to your `application.yml` under `plugins:`:
 
@@ -103,7 +103,7 @@ plugins:
 
 | Value       | Bitrate   | Description                              |
 |-------------|-----------|------------------------------------------|
-| `ORIGINAL`  | —         | Serves the raw file (FLAC, MP3, etc.)    |
+| `ORIGINAL`  | -         | Serves the raw file (FLAC, MP3, etc.)    |
 | `HIGH`      | 320 kbps  | Transcoded via Jellyfin                  |
 | `MEDIUM`    | 192 kbps  | Transcoded via Jellyfin                  |
 | `LOW`       | 128 kbps  | Transcoded via Jellyfin                  |
@@ -116,15 +116,15 @@ If Lavalink runs in Docker and Jellyfin runs on the host:
 - Or use `http://host.docker.internal:8096` (Docker Desktop)
 - Or use `http://172.17.0.1:8096` (Docker bridge gateway)
 
-### Step 3 — Restart Lavalink
+### Step 3 - Restart Lavalink
 
 Restart Lavalink and check the logs. You should see:
 
 ```
-Loaded plugin: jellylink-jellyfin
+Registered Jellylink - Source manager for Jellyfin by Myxelium
 ```
 
-Verify at `GET /v4/info` — `jellyfin` should appear under `sourceManagers`.
+Verify at `GET /v4/info` - `jellylink-jellyfin` should appear under `sourceManagers`.
 
 ---
 
@@ -150,7 +150,7 @@ dotnet add package Lavalink4NET.Jellyfin
 using Lavalink4NET.Jellyfin;
 using Lavalink4NET.Rest.Entities.Tracks;
 
-// Parse user input — automatically detects jfsearch:, ytsearch:, scsearch:, etc.
+// Parse user input - automatically detects jfsearch:, ytsearch:, scsearch:, etc.
 var (searchMode, cleanQuery) = SearchQueryParser.Parse(
     "jfsearch:Bohemian Rhapsody",
     defaultMode: JellyfinSearchMode.Jellyfin  // default when no prefix
@@ -171,18 +171,6 @@ if (result.IsJellyfin)
 Console.WriteLine($"Source: {result.SourceName}, Query: {result.Query}");
 ```
 
-### Example with Lavalink.py (Python)
-
-```python
-results = await player.node.get_tracks("jfsearch:Bohemian Rhapsody")
-```
-
-### Example with Shoukaku (JavaScript)
-
-```javascript
-const result = await node.rest.resolve("jfsearch:Bohemian Rhapsody");
-```
-
 The plugin only handles identifiers starting with `jfsearch:`. All other sources (YouTube, SoundCloud, Spotify, etc.) continue to work normally.
 
 ---
@@ -193,8 +181,8 @@ The plugin only handles identifiers starting with `jfsearch:`. All other sources
 |---------|----------|
 | `Jellyfin authentication failed` | Check `baseUrl`, `username`, and `password`. Make sure the URL is reachable from the Lavalink host/container. |
 | `No Jellyfin results found` | Verify the song exists in your Jellyfin library and that the user has access to it. |
-| `Unknown file format` | Update to the latest version — this was fixed by using direct audio streaming. |
-| `No cover art` | Update to the latest version — artwork URLs are now always included. Jellyfin has to be public to internet.|
+| `Unknown file format` | Update to the latest version - this was fixed by using direct audio streaming. |
+| `No cover art` | Update to the latest version - artwork URLs are now always included. Jellyfin has to be public to internet.|
 
 ---
 
