@@ -2,33 +2,26 @@ package dev.jellylink.jellyfin.audio
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import dev.arbjerg.lavalink.api.AudioPluginInfoModifier
-import dev.jellylink.jellyfin.config.JellyfinConfig
-import dev.jellylink.jellyfin.model.JellyfinMetadataStore
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.springframework.stereotype.Component
 
 @Component
-class JellyfinAudioPluginInfoModifier(
-    private val metadataStore: JellyfinMetadataStore,
-    private val config: JellyfinConfig,
-) : AudioPluginInfoModifier {
+class JellyfinAudioPluginInfoModifier : AudioPluginInfoModifier {
     override fun modifyAudioTrackPluginInfo(track: AudioTrack): JsonObject? {
-        val uri = track.info.uri ?: return null
-
-        if (!uri.startsWith(config.baseUrl.trimEnd('/'))) {
+        if (track !is JellyfinAudioTrack) {
             return null
         }
 
-        val meta = metadataStore.get(uri) ?: return null
+        val metadata = track.info
 
-        val map = buildMap<String, JsonPrimitive> {
-            meta.id.let { put("jellyfinId", JsonPrimitive(it)) }
-            meta.title?.let { put("jellyfinTitle", JsonPrimitive(it)) }
-            meta.artist?.let { put("jellyfinArtist", JsonPrimitive(it)) }
-            meta.album?.let { put("jellyfinAlbum", JsonPrimitive(it)) }
-            meta.lengthMs?.let { put("jellyfinLengthMs", JsonPrimitive(it)) }
-            meta.artworkUrl?.let { put("jellyfinArtworkUrl", JsonPrimitive(it)) }
+        val map = buildMap {
+            metadata.identifier.let { put("jellyfinId", JsonPrimitive(it)) }
+            metadata.title?.let { put("name", JsonPrimitive(it)) }
+            metadata.author?.let { put("artist", JsonPrimitive(it)) }
+            track.album?.let { put("albumName", JsonPrimitive(it)) }
+            metadata.length.let { put("length", JsonPrimitive(it)) }
+            metadata.artworkUrl?.let { put("artistArtworkUrl", JsonPrimitive(it)) }
         }
 
         return if (map.isEmpty()) {

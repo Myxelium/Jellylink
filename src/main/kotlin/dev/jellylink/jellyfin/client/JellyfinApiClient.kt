@@ -9,118 +9,20 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
-import java.time.Instant
-import java.util.UUID
 
-/**
- * Handles all HTTP communication with the Jellyfin server.
- *
- * Responsibilities:
- * - Authentication (login, token refresh, invalidation)
- * - Sending search requests (with automatic 401 retry)
- * - Building audio playback URLs
- */
 @Component
 class JellyfinApiClient(
     private val config: JellyfinConfig,
+    private val authenticator: JellyfinAuthenticator,
     private val responseParser: JellyfinResponseParser = JellyfinResponseParser(),
 ) {
-    @Volatile
-    var accessToken: String? = null
-        private set
-
-    @Volatile
-    private var userId: String? = null
-
-    @Volatile
-    private var tokenObtainedAt: Instant? = null
-
-    // -----------------------------------------------------------------------
-    // Authentication
-    // -----------------------------------------------------------------------
-
     /**
-     * Ensure a valid access token is available, authenticating if necessary.
-     *
-     * @return `true` when a valid token is ready for use
+     * Delegate to [JellyfinAuthenticator.ensureAuthenticated].
      */
-    fun ensureAuthenticated(): Boolean {
-        if (accessToken != null && userId != null && !isTokenExpired()) {
-            return true
-        }
-
-        if (accessToken != null && isTokenExpired()) {
-            log.info("Jellyfin access token expired after {} minutes, re-authenticating", config.tokenRefreshMinutes)
-            invalidateToken()
-        }
-
-        if (config.baseUrl.isBlank() || config.username.isBlank() || config.password.isBlank()) {
-            return false
-        }
-
-        return authenticate()
-    }
-
-    /**
-     * Invalidate the current token so the next call will re-authenticate.
-     */
-    fun invalidateToken() {
-        log.info("Invalidating Jellyfin access token")
-        accessToken = null
-        userId = null
-        tokenObtainedAt = null
-    }
-
-    private fun isTokenExpired(): Boolean {
-        val refreshMinutes = config.tokenRefreshMinutes
-
-        if (refreshMinutes <= 0) {
-            return false
-        }
-
-        val obtainedAt = tokenObtainedAt ?: return true
-
-        return Instant.now().isAfter(obtainedAt.plusSeconds(refreshMinutes * SECONDS_PER_MINUTE))
-    }
-
-    private fun authenticate(): Boolean {
-        val url = config.baseUrl.trimEnd('/') + "/Users/AuthenticateByName"
-        val body = """{"Username":"${escape(config.username)}","Pw":"${escape(config.password)}"}"""
-        val authHeader = "MediaBrowser Client=\"Jellylink\", Device=\"Lavalink\", DeviceId=\"${UUID.randomUUID()}\", Version=\"0.1.0\""
-
-        val request = HttpRequest
-            .newBuilder()
-            .uri(java.net.URI.create(url))
-            .header("Content-Type", "application/json")
-            .header("X-Emby-Authorization", authHeader)
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build()
-
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-
-        if (response.statusCode() !in HTTP_OK_RANGE) {
-            log.error("Jellyfin auth failed with status {}: {}", response.statusCode(), response.body().take(ERROR_BODY_PREVIEW_LENGTH))
-            return false
-        }
-
-        log.info("Successfully authenticated with Jellyfin")
-        val result = responseParser.parseAuthResponse(response.body()) ?: return false
-
-        accessToken = result.accessToken
-        userId = result.userId
-        tokenObtainedAt = Instant.now()
-
-        return true
-    }
-
-    // -----------------------------------------------------------------------
-    // Search
-    // -----------------------------------------------------------------------
+    fun ensureAuthenticated(): Boolean = authenticator.ensureAuthenticated()
 
     /**
      * Search Jellyfin for the first audio item matching [query].
-     *
-     * Handles 401 retry transparently.
      *
      * @return parsed [JellyfinMetadata], or `null` if no result / error
      */
@@ -158,14 +60,15 @@ class JellyfinApiClient(
 
         if (response.statusCode() == HTTP_UNAUTHORIZED) {
             log.warn("Jellyfin returned 401 — token may have been revoked, re-authenticating")
-            invalidateToken()
+            authenticator.invalidateToken()
 
-            if (!ensureAuthenticated()) {
+            if (!authenticator.ensureAuthenticated()) {
                 log.error("Jellyfin re-authentication failed after 401")
                 return null
             }
 
             val retryRequest = buildGetRequest(url) ?: return null
+
             response = httpClient.send(retryRequest, HttpResponse.BodyHandlers.ofString())
         }
 
@@ -173,7 +76,7 @@ class JellyfinApiClient(
     }
 
     private fun buildGetRequest(url: String): HttpRequest? {
-        val token = accessToken ?: return null
+        val token = authenticator.accessToken ?: return null
 
         return HttpRequest
             .newBuilder()
@@ -183,16 +86,12 @@ class JellyfinApiClient(
             .build()
     }
 
-    // -----------------------------------------------------------------------
-    // Playback URL
-    // -----------------------------------------------------------------------
-
     /**
      * Build a streaming URL for the given Jellyfin item, respecting audio quality settings.
      */
     fun buildPlaybackUrl(itemId: String): String {
         val base = config.baseUrl.trimEnd('/')
-        val token = accessToken ?: ""
+        val token = authenticator.accessToken ?: ""
         val quality = config.audioQuality.trim().uppercase()
 
         if (quality == "ORIGINAL") {
@@ -219,12 +118,6 @@ class JellyfinApiClient(
         return "$base/Audio/$itemId/stream?audioBitRate=$bitrate&audioCodec=$codec&api_key=$token"
     }
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
-    private fun escape(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"")
-
     companion object {
         private val log = LoggerFactory.getLogger(JellyfinApiClient::class.java)
         private val httpClient: HttpClient = HttpClient.newHttpClient()
@@ -234,7 +127,6 @@ class JellyfinApiClient(
         private const val ERROR_BODY_PREVIEW_LENGTH = 500
         private const val DEBUG_BODY_PREVIEW_LENGTH = 2000
 
-        private const val SECONDS_PER_MINUTE = 60L
         private const val BITRATE_HIGH = 320_000
         private const val BITRATE_MEDIUM = 192_000
         private const val BITRATE_LOW = 128_000

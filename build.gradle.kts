@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "dev.jellylink"
-version = "0.2.0"
+version = "0.2.1"
 
 lavalinkPlugin {
     name = "jellylink-jellyfin"
@@ -25,9 +25,6 @@ kotlin {
     jvmToolchain(17)
 }
 
-// ---------------------------------------------------------------------------
-// Detekt — static analysis
-// ---------------------------------------------------------------------------
 detekt {
     config.setFrom(files("$rootDir/detekt.yml"))
     buildUponDefaultConfig = true
@@ -47,9 +44,6 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
     exclude("**/generated/**")
 }
 
-// ---------------------------------------------------------------------------
-// ktlint — formatting
-// ---------------------------------------------------------------------------
 ktlint {
     version.set("1.5.0")
     android.set(false)
@@ -60,9 +54,6 @@ ktlint {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Wire lint checks into the build lifecycle
-// ---------------------------------------------------------------------------
 tasks.named("check") {
     dependsOn("detekt", "ktlintCheck")
 }
