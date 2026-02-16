@@ -98,22 +98,37 @@ class JellyfinAudioSourceManager(
         track: AudioTrack,
         output: DataOutput,
     ) {
-        // No additional data to encode beyond AudioTrackInfo.
+        if (track !is JellyfinAudioTrack) {
+            return
+        }
+
+        // Encode Jellyfin-specific metadata
+        output.writeUTF(track.jellyfinId)
+        output.writeUTF(track.jellyfinArtist ?: "")
+        output.writeUTF(track.jellyfinAlbum ?: "")
+        output.writeUTF(track.artworkUrl ?: "")
     }
 
     @Throws(IOException::class)
     override fun decodeTrack(
         trackInfo: AudioTrackInfo,
         input: DataInput,
-    ): AudioTrack =
-        JellyfinAudioTrack(
+    ): AudioTrack {
+        // Decode Jellyfin-specific metadata
+        val jellyfinId = input.readUTF()
+        val jellyfinArtist = input.readUTF().ifEmpty { null }
+        val jellyfinAlbum = input.readUTF().ifEmpty { null }
+        val artworkUrl = input.readUTF().ifEmpty { null }
+
+        return JellyfinAudioTrack(
             trackInfo,
-            trackInfo.identifier, // Use identifier as jellyfinId
-            trackInfo.author, // Use author as artist
-            null, // Album not available in trackInfo
-            trackInfo.artworkUrl, // Artwork URL from trackInfo
+            jellyfinId,
+            jellyfinArtist,
+            jellyfinAlbum,
+            artworkUrl,
             this,
         )
+    }
 
     override fun shutdown() {
         httpInterfaceManager.close()

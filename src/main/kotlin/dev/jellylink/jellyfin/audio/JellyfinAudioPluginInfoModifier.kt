@@ -13,17 +13,13 @@ class JellyfinAudioPluginInfoModifier : AudioPluginInfoModifier {
             return null
         }
 
-        val map = buildMap<String, JsonPrimitive> {
+        val map = buildMap {
             put("jellyfinId", JsonPrimitive(track.jellyfinId))
             track.jellyfinArtist?.let { put("jellyfinArtist", JsonPrimitive(it)) }
             track.jellyfinAlbum?.let { put("jellyfinAlbum", JsonPrimitive(it)) }
-            track.artworkUrl?.let { put("jellyfinArtworkUrl", JsonPrimitive(it)) }
+            track.artworkUrl?.let { put("artworkUrl", JsonPrimitive(it)) }
         }
 
-        return if (map.isEmpty()) {
-            null
-        } else {
-            JsonObject(map)
-        }
+        return JsonObject(map)
     }
 }
