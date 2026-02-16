@@ -3,6 +3,15 @@ lavalink-api = "4.0.8"
 lavalink-server = "4.0.8"
 detekt = "1.23.7"
 ktlint = "12.1.2"
+junit = "5.10.0"
+kotlinx-serialization = "1.6.0"
+slf4j = "2.0.9"
+
+[libraries]
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
 lavalink = { id = "dev.arbjerg.lavalink.gradle-plugin", version = "1.0.15" }

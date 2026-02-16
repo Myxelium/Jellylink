@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.8.22"
+    kotlin("jvm") version "1.9.22"
     alias(libs.plugins.lavalink)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
@@ -17,12 +17,29 @@ lavalinkPlugin {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
+}
+
+// ---------------------------------------------------------------------------
+// Dependencies
+// ---------------------------------------------------------------------------
+dependencies {
+    implementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.slf4j.simple)
+}
+
+// ---------------------------------------------------------------------------
+// Test configuration
+// ---------------------------------------------------------------------------
+tasks.test {
+    useJUnitPlatform()
 }
 
 // ---------------------------------------------------------------------------
