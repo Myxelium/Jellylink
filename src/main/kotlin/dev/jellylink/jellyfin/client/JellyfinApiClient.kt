@@ -35,6 +35,8 @@ class JellyfinApiClient(
     @Volatile
     private var tokenObtainedAt: Instant? = null
 
+    private val authLock = Any()
+
     // -----------------------------------------------------------------------
     // Authentication
     // -----------------------------------------------------------------------
@@ -45,20 +47,29 @@ class JellyfinApiClient(
      * @return `true` when a valid token is ready for use
      */
     fun ensureAuthenticated(): Boolean {
+        // Fast path: check if already authenticated without lock
         if (accessToken != null && userId != null && !isTokenExpired()) {
             return true
         }
 
-        if (accessToken != null && isTokenExpired()) {
-            log.info("Jellyfin access token expired after {} minutes, re-authenticating", config.tokenRefreshMinutes)
-            invalidateToken()
-        }
+        // Slow path: acquire lock to prevent concurrent authentication
+        synchronized(authLock) {
+            // Double-check after acquiring lock
+            if (accessToken != null && userId != null && !isTokenExpired()) {
+                return true
+            }
 
-        if (config.baseUrl.isBlank() || config.username.isBlank() || config.password.isBlank()) {
-            return false
-        }
+            if (accessToken != null && isTokenExpired()) {
+                log.info("Jellyfin access token expired after {} minutes, re-authenticating", config.tokenRefreshMinutes)
+                invalidateToken()
+            }
 
-        return authenticate()
+            if (config.baseUrl.isBlank() || config.username.isBlank() || config.password.isBlank()) {
+                return false
+            }
+
+            return authenticate()
+        }
     }
 
     /**
@@ -126,14 +137,14 @@ class JellyfinApiClient(
      */
     fun searchFirstAudioItem(query: String): JellyfinMetadata? {
         val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8)
-        val url = StringBuilder()
-            .append(config.baseUrl.trimEnd('/'))
-            .append("/Items?SearchTerm=")
-            .append(encodedQuery)
-            .append("&IncludeItemTypes=Audio&Recursive=true&Limit=")
-            .append(config.searchLimit)
-            .append("&Fields=Artists,AlbumArtist,MediaSources,ImageTags")
-            .toString()
+        val url = buildString {
+            append(config.baseUrl.trimEnd('/'))
+            append("/Items?SearchTerm=")
+            append(encodedQuery)
+            append("&IncludeItemTypes=Audio&Recursive=true&Limit=")
+            append(config.searchLimit)
+            append("&Fields=Artists,AlbumArtist,MediaSources,ImageTags")
+        }
 
         val response = executeGetWithRetry(url) ?: return null
 
@@ -223,7 +234,15 @@ class JellyfinApiClient(
     // Helpers
     // -----------------------------------------------------------------------
 
-    private fun escape(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"")
+    private fun escape(value: String): String =
+        value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+            .replace("\b", "\\b")
+            .replace("\u000C", "\\f")
 
     companion object {
         private val log = LoggerFactory.getLogger(JellyfinApiClient::class.java)

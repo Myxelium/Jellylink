@@ -5,20 +5,26 @@ Keywords: Jellyfin Lavalink plugin, Jellyfin music bot, Discord music bot self-h
 -->
 # Jellylink – Jellyfin Music Plugin for Lavalink
 
-Play music from your **Jellyfin** media server through **Lavalink**. Jellylink is a Lavalink plugin that lets Discord bots search and stream audio directly from a Jellyfin library — no YouTube needed.
+[![CI](https://github.com/Myxelium/Jellylink/actions/workflows/ci.yml/badge.svg)](https://github.com/Myxelium/Jellylink/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![JitPack](https://jitpack.io/v/Myxelium/Jellylink.svg)](https://jitpack.io/#Myxelium/Jellylink)
 
-> **Keywords:** Jellyfin Lavalink plugin, Jellyfin Discord music bot, Lavalink Jellyfin source, stream Jellyfin audio Discord, self-hosted music bot
+Play music from your **Jellyfin** media server through **Lavalink**. Jellylink is a Lavalink plugin that lets Discord bots search and stream audio directly from a Jellyfin library — no YouTube, Spotify, or SoundCloud dependencies required.
+
+> **Perfect for:** Self-hosted music collections, privacy-focused bots, lossless audio streaming (FLAC/ALAC), and offline music libraries.
 
 ---
 
-## Features
+## ✨ Features
 
-- **Search your Jellyfin library** from any Lavalink client using the `jfsearch:` prefix
-- **Stream audio directly** — plays FLAC, MP3, OGG, and other formats from Jellyfin
-- **Cover art & metadata** — track title, artist, album, duration, and artwork are passed to your client
-- **Configurable audio quality** — stream original files or transcode to a specific bitrate/codec
-- **Username/password authentication** — no need to manage API keys manually
-- Works alongside YouTube, SoundCloud, Spotify, and all other Lavalink sources
+- 🔍 **Search your Jellyfin library** from any Lavalink client using the `jfsearch:` prefix
+- 🎵 **Stream audio directly** — supports FLAC, MP3, AAC, OGG, OPUS, and other formats
+- 🎨 **Rich metadata** — track title, artist, album, duration, and album artwork
+- ⚙️ **Configurable quality** — stream original files or transcode to specific bitrate/codec
+- 🔐 **Secure authentication** — automatic token management with configurable refresh
+- 🚀 **Performance optimized** — LRU cache, thread-safe operations, connection pooling
+- 🔄 **Resilient** — automatic retry on token expiration (401 errors)
+- 🌐 **Multi-source** — works alongside YouTube, SoundCloud, Spotify, and all other Lavalink sources
 
 ---
 
@@ -41,7 +47,7 @@ lavalink:
       repository: https://jitpack.io
 ```
 
-> **Tip:** Replace `v0.1.0` with the version you want. Check available versions on the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
+> **Tip:** Replace `v0.2.0` with the version you want. Check available versions on the [Releases](https://github.com/Myxelium/Jellylink/releases) page.
 
 Lavalink will automatically download the plugin on startup.
 
@@ -60,7 +66,7 @@ cd Jellylink
 ./gradlew build
 ```
 
-The JAR will be at `build/libs/jellylink-0.1.0.jar`.
+The JAR will be at `build/libs/jellylink-0.2.0.jar`.
 
 Copy the JAR into your Lavalink `plugins/` directory:
 
@@ -69,7 +75,7 @@ lavalink/
 ├── application.yml
 ├── Lavalink.jar
 └── plugins/
-    └── jellylink-0.1.0.jar    ← put it here
+    └── jellylink-0.2.0.jar    ← put it here
 ```
 
 If you use **Docker**, mount it into the container's plugins volume:
@@ -187,7 +193,30 @@ The plugin only handles identifiers starting with `jfsearch:`. All other sources
 
 ---
 
-## Troubleshooting
+## 🔧 Advanced Configuration
+
+### Performance Tuning
+
+The plugin includes several optimizations for production use:
+
+- **LRU Cache**: Metadata is cached with a default limit of 10,000 entries. When exceeded, the least recently used entries are evicted automatically.
+- **Thread Safety**: All authentication and metadata operations are thread-safe using concurrent data structures and synchronization.
+- **Connection Pooling**: HTTP client uses persistent connections for improved performance.
+
+### Custom Configuration (Optional)
+
+You can customize the metadata cache size by modifying the Spring bean configuration:
+
+```kotlin
+@Bean
+fun jellyfinMetadataStore(): JellyfinMetadataStore {
+    return JellyfinMetadataStore(maxSize = 5000) // Custom cache size
+}
+```
+
+---
+
+## 🐛 Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
@@ -195,9 +224,81 @@ The plugin only handles identifiers starting with `jfsearch:`. All other sources
 | `No Jellyfin results found` | Verify the song exists in your Jellyfin library and that the user has access to it. |
 | `Unknown file format` | Update to the latest version — this was fixed by using direct audio streaming. |
 | `No cover art` | Update to the latest version — artwork URLs are now always included. Jellyfin has to be public to internet.|
+| `401 Unauthorized after working` | Token may have expired. The plugin automatically re-authenticates. Check `tokenRefreshMinutes` setting. |
+| `Connection timeout / refused` | If using Docker, ensure proper network configuration (see Docker Networking section above). |
+
+### Enable Debug Logging
+
+Add to your Lavalink `application.yml`:
+
+```yaml
+logging:
+  level:
+    dev.jellylink: DEBUG
+```
+
+This will show detailed logs for authentication, search requests, and playback URLs.
 
 ---
 
-## License
+## 📊 Recent Improvements
 
-MIT
+### Bug Fixes
+- 🔒 **Fixed race condition** in authentication - prevents duplicate login requests under high concurrency
+- 🧠 **Fixed memory leak** - implemented LRU cache with automatic eviction (10,000 entry limit)
+- 🛡️ **Enhanced JSON escaping** - properly handles special characters in passwords (newlines, tabs, etc.)
+- ✅ **Improved validation** - prevents negative duration values from corrupting metadata
+
+### Optimizations
+- ⚡ **Lazy initialization** - base URL normalization cached to reduce repeated string operations
+- 🔄 **Double-checked locking** - faster authentication checks without unnecessary synchronization
+- 📝 **Kotlin idioms** - replaced `StringBuilder` with `buildString {}` for cleaner code
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+### Development Setup
+
+```bash
+git clone https://github.com/Myxelium/Jellylink.git
+cd Jellylink
+./gradlew build
+```
+
+### Code Quality
+
+This project uses:
+- **Detekt** for static code analysis
+- **ktlint** for code formatting
+
+Run checks with:
+```bash
+./gradlew check
+```
+
+---
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## ⭐ Support
+
+If you find this plugin useful, please consider:
+- ⭐ Starring the repository
+- 🐛 Reporting bugs via [GitHub Issues](https://github.com/Myxelium/Jellylink/issues)
+- 💡 Suggesting features or improvements
+- 🤝 Contributing code or documentation
+
+---
+
+## 🔗 Related Projects
+
+- [Lavalink](https://github.com/lavalink-devs/Lavalink) - Standalone audio sending node
+- [Jellyfin](https://jellyfin.org/) - The Free Software Media System
+- [Lavalink4NET.Jellyfin](https://github.com/Myxelium/Lavalink4NET.Jellyfin) - C# companion package with search mode support

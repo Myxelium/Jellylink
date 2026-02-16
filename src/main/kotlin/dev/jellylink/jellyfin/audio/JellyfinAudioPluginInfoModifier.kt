@@ -13,10 +13,12 @@ class JellyfinAudioPluginInfoModifier(
     private val metadataStore: JellyfinMetadataStore,
     private val config: JellyfinConfig,
 ) : AudioPluginInfoModifier {
+    private val normalizedBaseUrl by lazy { config.baseUrl.trimEnd('/') }
+
     override fun modifyAudioTrackPluginInfo(track: AudioTrack): JsonObject? {
         val uri = track.info.uri ?: return null
 
-        if (!uri.startsWith(config.baseUrl.trimEnd('/'))) {
+        if (!uri.startsWith(normalizedBaseUrl)) {
             return null
         }
 

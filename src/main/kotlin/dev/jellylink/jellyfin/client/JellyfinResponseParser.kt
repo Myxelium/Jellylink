@@ -88,7 +88,13 @@ class JellyfinResponseParser(
         val album = item["Album"]?.jsonPrimitive?.contentOrNull
 
         val runTimeTicks = item["RunTimeTicks"]?.jsonPrimitive?.longOrNull
-        val lengthMs = runTimeTicks?.let { it / TICKS_PER_MILLISECOND }
+        val lengthMs = runTimeTicks?.let { ticks ->
+            if (ticks > 0) {
+                ticks / TICKS_PER_MILLISECOND
+            } else {
+                null
+            }
+        }
 
         val imageTag = item["ImageTags"]
             ?.jsonObject
